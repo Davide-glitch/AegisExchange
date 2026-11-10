@@ -19,10 +19,10 @@
 
     <modules>
         <module>common-events</module>
+        <module>matching-engine-service</module>
         <!-- Uncomment each service module as we add its folder in the next steps:
         <module>order-ingestion-service</module>
         <module>account-wallet-service</module>
-        <module>matching-engine-service</module>
         <module>market-data-service</module>
         <module>surveillance-risk-service</module>
         <module>enforcement-governance-service</module>
