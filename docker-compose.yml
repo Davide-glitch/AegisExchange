@@ -1,0 +1,57 @@
+services:
+  postgres-ssot:
+    image: postgres:16-alpine
+    container_name: aegis-postgres-ssot
+    environment:
+      POSTGRES_DB: aegis_ledger
+      POSTGRES_USER: aegis
+      POSTGRES_PASSWORD: aegis_secret
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aegis -d aegis_ledger"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.4
+    container_name: aegis-redpanda-bus
+    command:
+      - redpanda
+      - start
+      - --smp 1
+      - --memory 768M
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --node-id 0
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+    ports:
+      - "9092:9092"
+      - "19092:19092"
+
+  redpanda-init:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.4
+    container_name: aegis-redpanda-init
+    depends_on:
+      - redpanda
+    entrypoint: /bin/sh
+    command: -c "
+      sleep 5 &&
+      rpk topic create order-requests -p 3 -r 1 --brokers redpanda:9092 &&
+      rpk topic create order-accepted -p 3 -r 1 --brokers redpanda:9092 &&
+      rpk topic create order-rejected -p 3 -r 1 --brokers redpanda:9092 &&
+      rpk topic create execution-events -p 3 -r 1 --brokers redpanda:9092 &&
+      rpk topic create enforcement-events -p 1 -r 1 --brokers redpanda:9092
+      "
+
+  nginx-api-gateway:
+    image: nginx:1.27-alpine
+    container_name: aegis-node-0-gateway
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8080:8080"
