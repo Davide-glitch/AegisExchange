@@ -1,0 +1,21 @@
+server:
+  port: ${SERVER_PORT:8084}
+
+node:
+  id: ${NODE_ID:node-3a}
+
+spring:
+  application:
+    name: matching-engine-service
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:19092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: matching-engine-cluster
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.aegis.events.*"
